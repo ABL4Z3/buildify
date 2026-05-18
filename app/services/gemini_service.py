@@ -5,6 +5,7 @@ import time
 from typing import Any, Type, TypeVar
 
 import httpx
+from json_repair import repair_json
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 from pydantic import BaseModel, ValidationError
 
@@ -252,10 +253,22 @@ class GeminiService:
             start = text.find("{")
             end = text.rfind("}")
             if start == -1 or end == -1:
+                try:
+                    repaired = repair_json(text, return_objects=True)
+                    if isinstance(repaired, (dict, list)):
+                        return repaired
+                except Exception as exc:
+                    raise LLMParseError("LLM response did not contain valid JSON.") from exc
                 raise LLMParseError("LLM response did not contain valid JSON.")
             try:
                 return json.loads(text[start : end + 1])
             except json.JSONDecodeError as exc:
+                try:
+                    repaired = repair_json(text[start : end + 1], return_objects=True)
+                    if isinstance(repaired, (dict, list)):
+                        return repaired
+                except Exception:
+                    pass
                 raise LLMParseError("LLM response contained malformed JSON.") from exc
 
 

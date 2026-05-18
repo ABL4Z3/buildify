@@ -10,5 +10,6 @@ passlib[bcrypt]==1.7.4
 sqlalchemy==2.0.41
 aiosqlite==0.21.0
 cachetools==5.5.2
+json-repair==0.59.10
 # For PostgreSQL (optional, for production):
 # asyncpg==0.30.0
