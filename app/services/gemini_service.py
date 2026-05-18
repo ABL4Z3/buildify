@@ -3,7 +3,7 @@ import logging
 from typing import Any, Type, TypeVar
 
 import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 from pydantic import BaseModel, ValidationError
 
 from app.core.config import settings
@@ -13,13 +13,23 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
+
+def _is_retryable_exception(exc: BaseException) -> bool:
+    """Retry only for transient conditions (timeouts, 429, and 5xx)."""
+    if isinstance(exc, httpx.TimeoutException):
+        return True
+    if isinstance(exc, httpx.HTTPStatusError):
+        status_code = exc.response.status_code
+        return status_code == 429 or status_code >= 500
+    return False
+
 # Retry: up to 3 attempts, exponential backoff (1s, 2s, 4s)
 _retry_decorator = retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=1, max=10),
-    retry=retry_if_exception_type((httpx.TimeoutException, httpx.HTTPStatusError)),
+    retry=retry_if_exception(_is_retryable_exception),
     before_sleep=lambda state: logger.warning(
-        "Retrying Gemini call (attempt %d): %s",
+        "Retrying LLM call (attempt %d): %s",
         state.attempt_number,
         state.outcome.exception() if state.outcome else "unknown",
     ),
@@ -27,7 +37,7 @@ _retry_decorator = retry(
 
 
 class GeminiService:
-    """Async Gemini API client with retry, caching, and Pydantic enforcement."""
+    """Async LLM client with retry, caching, and Pydantic enforcement."""
 
     def __init__(self) -> None:
         self._client: httpx.AsyncClient | None = None
@@ -80,6 +90,69 @@ class GeminiService:
         text = data["candidates"][0]["content"]["parts"][0]["text"]
         return self._safe_parse_json(text)
 
+    @_retry_decorator
+    async def _call_cerebras(
+        self,
+        system_instruction: str,
+        user_prompt: str,
+    ) -> dict[str, Any]:
+        """Make an async call to Cerebras (OpenAI-compatible) with retry logic."""
+        if not settings.cerebras_api_key:
+            raise ValueError("CEREBRAS_API_KEY is not set.")
+
+        client = await self._get_client()
+        api_url = "https://api.cerebras.ai/v1/chat/completions"
+
+        response_format = {"type": "json_object"}
+        payload = {
+            "model": settings.cerebras_model,
+            "temperature": 0.3,
+            "response_format": response_format,
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": user_prompt},
+            ],
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.cerebras_api_key}",
+        }
+
+        logger.info("Calling Cerebras API for: %s", user_prompt[:80])
+        response = await client.post(api_url, json=payload, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+        text = data["choices"][0]["message"]["content"]
+        return self._safe_parse_json(text)
+
+    async def _call_provider(
+        self,
+        system_instruction: str,
+        user_prompt: str,
+    ) -> dict[str, Any]:
+        """Dispatch LLM call based on configured provider."""
+        provider = settings.llm_provider.strip().lower()
+
+        if provider == "auto":
+            if settings.cerebras_api_key:
+                return await self._call_cerebras(system_instruction, user_prompt)
+            if settings.gemini_api_key:
+                return await self._call_gemini(system_instruction, user_prompt)
+            raise ValueError(
+                "No API key configured. Set CEREBRAS_API_KEY or GEMINI_API_KEY."
+            )
+
+        if provider == "cerebras":
+            return await self._call_cerebras(system_instruction, user_prompt)
+
+        if provider == "gemini":
+            return await self._call_gemini(system_instruction, user_prompt)
+
+        raise ValueError(
+            "Invalid LLM_PROVIDER. Use one of: auto, cerebras, gemini."
+        )
+
     # ── Structured call with caching + Pydantic validation ──
 
     async def structured_call(
@@ -90,11 +163,12 @@ class GeminiService:
         cache_type: str = "generic",
     ) -> T:
         """
-        Call Gemini, cache the result, and validate with Pydantic model.
+        Call configured LLM provider, cache the result, and validate with Pydantic model.
         Returns an instance of response_model.
         """
         # Check cache
-        cache_key = make_cache_key(user_prompt, "", cache_type)
+        provider_cache_hint = settings.llm_provider.strip().lower() or "auto"
+        cache_key = make_cache_key(user_prompt, provider_cache_hint, cache_type)
         cached = get_cached(cache_key)
         if cached is not None:
             try:
@@ -102,16 +176,16 @@ class GeminiService:
             except (ValidationError, Exception):
                 logger.warning("Cached data failed validation, re-fetching.")
 
-        # Call Gemini
-        raw = await self._call_gemini(system_instruction, user_prompt)
+        # Call configured LLM provider
+        raw = await self._call_provider(system_instruction, user_prompt)
 
         # Validate with Pydantic
         try:
             result = response_model(**raw)
         except ValidationError as e:
-            logger.error("Gemini returned invalid data for %s: %s", cache_type, e)
+            logger.error("LLM returned invalid data for %s: %s", cache_type, e)
             raise ValueError(
-                f"Gemini returned data that does not match expected schema for {cache_type}. "
+                f"LLM returned data that does not match expected schema for {cache_type}. "
                 f"Please try again."
             ) from e
 
@@ -124,14 +198,14 @@ class GeminiService:
 
     @staticmethod
     def _safe_parse_json(text: str) -> dict[str, Any]:
-        """Parse JSON from Gemini response, with brace-extraction fallback."""
+        """Parse JSON from LLM response, with brace-extraction fallback."""
         try:
             return json.loads(text)
         except json.JSONDecodeError:
             start = text.find("{")
             end = text.rfind("}")
             if start == -1 or end == -1:
-                raise ValueError("Gemini response did not contain valid JSON.")
+                raise ValueError("LLM response did not contain valid JSON.")
             return json.loads(text[start : end + 1])
 
 

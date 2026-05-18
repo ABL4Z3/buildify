@@ -100,11 +100,16 @@ Copy the example env file and edit it:
 cp .env.example .env
 ```
 
-**Open `.env` in any text editor** and set your Gemini API key:
+**Open `.env` in any text editor** and set your LLM provider/API key:
 
 ```env
 # ── Required ──
-GEMINI_API_KEY=AIzaSy...your_actual_key_here
+LLM_PROVIDER=cerebras
+CEREBRAS_API_KEY=your_cerebras_api_key_here
+CEREBRAS_MODEL=llama3.1-8b
+
+# ── Optional fallback ──
+GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash
 
 # ── Optional (defaults are fine for development) ──
@@ -115,11 +120,9 @@ RATE_LIMIT_PER_MINUTE=10
 CACHE_TTL_SECONDS=3600
 ```
 
-### How to Get a Gemini API Key:
-1. Go to [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
-2. Click **"Create API Key"**
-3. Select a Google Cloud project (or create one)
-4. Copy the key and paste it in your `.env` file
+### How to Configure Provider Keys:
+1. Set `LLM_PROVIDER=cerebras` and add your `CEREBRAS_API_KEY`.
+2. Optionally keep `GEMINI_API_KEY` set as fallback when using `LLM_PROVIDER=auto`.
 
 ---
 
@@ -235,7 +238,7 @@ If you prefer Docker:
 
 ### Using Docker Compose (recommended):
 ```bash
-# Make sure .env file exists with your GEMINI_API_KEY
+# Make sure .env file exists with your LLM API key(s)
 docker-compose up --build
 ```
 
@@ -260,7 +263,8 @@ The API will be available at http://localhost:8000
 2. In [Railway](https://railway.app/), create a new project → **Deploy from GitHub Repo**.
 3. Select this repository.
 4. Add environment variables in Railway dashboard:
-   - `GEMINI_API_KEY=your_real_key`
+  - `LLM_PROVIDER=cerebras`
+  - `CEREBRAS_API_KEY=your_real_key`
    - `GEMINI_MODEL=gemini-2.5-flash`
    - `API_AUTH_TOKEN=a_secure_random_token`
 5. Railway auto-detects the `Procfile` and runs the server.
@@ -278,7 +282,8 @@ The API will be available at http://localhost:8000
 
 ```bash
 fly launch
-fly secrets set GEMINI_API_KEY=your_key
+fly secrets set LLM_PROVIDER=cerebras
+fly secrets set CEREBRAS_API_KEY=your_key
 fly deploy
 ```
 
@@ -333,9 +338,9 @@ By default, the API runs without authentication. To secure it:
 
 ## 12. Troubleshooting
 
-### "GEMINI_API_KEY is not set"
+### "LLM API key is not set"
 - Make sure `.env` file exists in the project root
-- Verify `GEMINI_API_KEY` has your actual key (no quotes, no spaces)
+- Verify `CEREBRAS_API_KEY` (or `GEMINI_API_KEY`) has your actual key (no quotes, no spaces)
 
 ### "ModuleNotFoundError"
 - Make sure virtual environment is activated: `(.venv)` in prompt
@@ -353,11 +358,11 @@ By default, the API runs without authentication. To secure it:
   ```
 
 ### "The AI returned data that could not be validated"
-- Gemini sometimes returns slightly different JSON formats. Retry the request.
+- LLM output can vary slightly in JSON formatting. Retry the request.
 - The cache may have stale data — restart the server to clear the in-memory cache.
 
 ### Slow responses
-- First requests are slower (Gemini API call + cold start)
+- First requests are slower (LLM API call + cold start)
 - Subsequent identical requests are cached (1-hour TTL by default)
 - The `/full-analysis` endpoint runs 7 analyses in parallel for speed
 

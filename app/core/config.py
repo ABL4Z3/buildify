@@ -2,9 +2,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    # LLM provider selection: auto | gemini | cerebras
+    llm_provider: str = "auto"
+
     # Gemini API
-    gemini_api_key: str
+    gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
+
+    # Cerebras API
+    cerebras_api_key: str = ""
+    cerebras_model: str = "llama3.1-8b"
 
     # Authentication
     api_auth_token: str = ""

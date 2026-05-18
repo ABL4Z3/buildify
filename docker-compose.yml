@@ -6,6 +6,9 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-auto}
+      - CEREBRAS_API_KEY=${CEREBRAS_API_KEY:-}
+      - CEREBRAS_MODEL=${CEREBRAS_MODEL:-llama3.1-8b}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
       - API_AUTH_TOKEN=${API_AUTH_TOKEN:-}

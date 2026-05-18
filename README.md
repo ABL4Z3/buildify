@@ -1,6 +1,6 @@
 # Project Builder Cost Estimator API
 
-A comprehensive FastAPI service powered by Gemini AI that analyzes software project ideas — from cost estimation to pitch deck generation.
+A comprehensive FastAPI service powered by configurable LLM providers (Cerebras or Gemini) that analyzes software project ideas — from cost estimation to pitch deck generation.
 
 ## Features
 
@@ -49,7 +49,7 @@ pip install -r requirements.txt
 
 # Configure environment
 cp .env.example .env
-# Edit .env and set your GEMINI_API_KEY
+# Edit .env and set CEREBRAS_API_KEY (recommended)
 ```
 
 ### 3. Run
@@ -82,7 +82,10 @@ By default, auth is **disabled** (development mode). To enable:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GEMINI_API_KEY` | *(required)* | Your Google Gemini API key |
+| `LLM_PROVIDER` | `auto` | LLM provider: `auto`, `cerebras`, or `gemini` |
+| `CEREBRAS_API_KEY` | *(recommended)* | Your Cerebras API key |
+| `CEREBRAS_MODEL` | `llama3.1-8b` | Cerebras model to use |
+| `GEMINI_API_KEY` | *(optional fallback)* | Your Google Gemini API key |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model to use |
 | `API_AUTH_TOKEN` | *(empty = disabled)* | API key for authentication |
 | `PB_DATABASE_URL` | `sqlite+aiosqlite:///./project_builder.db` | Database connection URL |
@@ -163,7 +166,8 @@ project-builder/
 2. In Railway, create a new project → **Deploy from GitHub Repo**.
 3. Select this repository.
 4. Add environment variables:
-   - `GEMINI_API_KEY=your_real_key`
+  - `CEREBRAS_API_KEY=your_real_key`
+  - `LLM_PROVIDER=cerebras`
    - `GEMINI_MODEL=gemini-2.5-flash`
 5. Railway will run the `Procfile` command automatically.
 
