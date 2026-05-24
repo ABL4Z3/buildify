@@ -166,7 +166,7 @@ curl -X POST http://127.0.0.1:8000/api/v2/estimate-cost \
   -H "Content-Type: application/json" \
   -d '{
     "project_idea": "I need a B2B SaaS platform for restaurant inventory management with mobile access",
-    "currency": "USD"
+    "currency": "INR"
   }'
 ```
 
@@ -187,7 +187,7 @@ curl -X POST http://127.0.0.1:8000/api/v2/full-analysis \
   -H "Content-Type: application/json" \
   -d '{
     "project_idea": "A food delivery app with real-time tracking and subscription meals",
-    "currency": "USD"
+    "currency": "INR"
   }'
 ```
 
@@ -197,7 +197,7 @@ curl -X POST http://127.0.0.1:8000/api/v2/pitch-deck \
   -H "Content-Type: application/json" \
   -d '{
     "project_idea": "AI-powered personal finance app for Gen Z",
-    "currency": "USD"
+    "currency": "INR"
   }'
 ```
 
@@ -207,7 +207,7 @@ curl -X POST http://127.0.0.1:8000/api/v2/complexity \
   -H "Content-Type: application/json" \
   -d '{
     "project_idea": "A multi-vendor marketplace with real-time bidding and escrow payments",
-    "currency": "USD"
+    "currency": "INR"
   }'
 ```
 
@@ -218,7 +218,7 @@ curl -X POST http://127.0.0.1:8000/api/v2/projects \
   -d '{
     "project_idea": "A food delivery app with real-time tracking",
     "project_name": "FoodDash",
-    "currency": "USD"
+    "currency": "INR"
   }'
 ```
 
@@ -227,7 +227,7 @@ curl -X POST http://127.0.0.1:8000/api/v2/projects \
 curl -X POST http://127.0.0.1:8000/api/v2/estimate-cost \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your_secret_token" \
-  -d '{"project_idea": "...", "currency": "USD"}'
+  -d '{"project_idea": "...", "currency": "INR"}'
 ```
 
 ---

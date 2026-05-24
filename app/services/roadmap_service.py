@@ -2,6 +2,7 @@ import logging
 
 from app.schemas.roadmap import RoadmapResponse
 from app.services.gemini_service import gemini_service
+from app.services.pricing_policy import normalize_roadmap_for_value, preferred_currency
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +17,16 @@ SYSTEM_PROMPT = (
 
 class RoadmapService:
     async def generate_roadmap(self, project_idea: str, currency: str) -> RoadmapResponse:
+        currency = preferred_currency(currency)
         user_prompt = (
             f"Create a phased development roadmap for this project:\n\n"
             f'"{project_idea}"\n\n'
             f"Currency: {currency}\n\n"
             f"Break it into at least 3 phases: MVP, V2, Full Vision.\n"
             f"For each phase include: features, weeks, cost, and tech stack.\n\n"
+            f"Use an MVP-first India-market pricing style for INR. Keep simple apps lean, "
+            f"show open-source/reusable tooling in the tech stack, and avoid enterprise "
+            f"overhead unless the request clearly requires it.\n\n"
             f"Return JSON:\n"
             f'{{\n'
             f'  "phases": [\n'
@@ -42,12 +47,13 @@ class RoadmapService:
             f'}}'
         )
 
-        return await gemini_service.structured_call(
+        result = await gemini_service.structured_call(
             system_instruction=SYSTEM_PROMPT,
             user_prompt=user_prompt,
             response_model=RoadmapResponse,
             cache_type="roadmap",
         )
+        return normalize_roadmap_for_value(result, project_idea, currency)
 
 
 roadmap_service = RoadmapService()

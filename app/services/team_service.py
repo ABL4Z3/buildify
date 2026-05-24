@@ -2,6 +2,7 @@ import logging
 
 from app.schemas.team import TeamResponse
 from app.services.gemini_service import gemini_service
+from app.services.pricing_policy import normalize_team_for_value, preferred_currency
 
 logger = logging.getLogger(__name__)
 
@@ -15,12 +16,16 @@ SYSTEM_PROMPT = (
 
 class TeamService:
     async def generate_team(self, project_idea: str, currency: str) -> TeamResponse:
+        currency = preferred_currency(currency)
         user_prompt = (
             f"Determine the team needed to build this app:\n\n"
             f'"{project_idea}"\n\n'
             f"Currency: {currency}\n\n"
             f"For each role, specify: title, duration in months, employment type, "
             f"monthly rate, required skills, and responsibilities.\n\n"
+            f"For INR, use lean India-market monthly rates and prefer a compact MVP team. "
+            f"Do not recommend a large full-time team for simple games, landing pages, "
+            f"or small CRUD apps.\n\n"
             f"Return ONLY valid JSON. Do not include markdown, comments, or explanations.\n"
             f"Do not omit any top-level fields.\n\n"
             f"Return JSON:\n"
@@ -42,12 +47,13 @@ class TeamService:
             f'}}'
         )
 
-        return await gemini_service.structured_call(
+        result = await gemini_service.structured_call(
             system_instruction=SYSTEM_PROMPT,
             user_prompt=user_prompt,
             response_model=TeamResponse,
             cache_type="team",
         )
+        return normalize_team_for_value(result, project_idea, currency)
 
 
 team_service = TeamService()

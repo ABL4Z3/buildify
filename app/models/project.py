@@ -12,7 +12,7 @@ class Project(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     project_name = Column(String(200), nullable=False, default="")
     project_idea = Column(Text, nullable=False)
-    currency = Column(String(3), nullable=False, default="USD")
+    currency = Column(String(3), nullable=False, default="INR")
     status = Column(String(20), nullable=False, default="Exploring")
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())

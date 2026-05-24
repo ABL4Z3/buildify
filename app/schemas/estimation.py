@@ -11,7 +11,7 @@ class EstimateRequest(BaseModel):
         description="Client's project idea and requirements.",
     )
     currency: str = Field(
-        default="USD",
+        default="INR",
         min_length=3,
         max_length=3,
         pattern=r"^[A-Z]{3}$",

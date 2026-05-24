@@ -178,7 +178,7 @@ project-builder/
 POST /api/v2/estimate-cost
 {
   "project_idea": "I need a B2B SaaS platform for restaurant inventory, purchasing and analytics with mobile access.",
-  "currency": "USD"
+  "currency": "INR"
 }
 ```
 
@@ -197,7 +197,7 @@ POST /api/v2/chat
 POST /api/v2/full-analysis
 {
   "project_idea": "A food delivery app with real-time tracking and subscription meals.",
-  "currency": "USD"
+  "currency": "INR"
 }
 ```
 
@@ -206,7 +206,7 @@ POST /api/v2/full-analysis
 POST /api/v2/pitch-deck
 {
   "project_idea": "AI-powered personal finance app for Gen Z.",
-  "currency": "USD"
+  "currency": "INR"
 }
 ```
 

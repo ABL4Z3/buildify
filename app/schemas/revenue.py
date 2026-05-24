@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class RevenueRequest(BaseModel):
     project_idea: str = Field(..., min_length=15, max_length=2000)
-    currency: str = Field(default="USD", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
+    currency: str = Field(default="INR", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
 
 
 class RevenueEstimate(BaseModel):

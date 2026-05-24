@@ -2,6 +2,7 @@ import logging
 
 from app.schemas.tech_stack import TechStackResponse
 from app.services.gemini_service import gemini_service
+from app.services.pricing_policy import normalize_tech_stack_for_value, preferred_currency
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +17,15 @@ SYSTEM_PROMPT = (
 
 class TechStackService:
     async def compare_tech(self, project_idea: str, currency: str) -> TechStackResponse:
+        currency = preferred_currency(currency)
         user_prompt = (
             f"Compare technology options for building this app:\n\n"
             f'"{project_idea}"\n\n'
             f"Currency: {currency}\n\n"
             f"For each category, compare an open-source option vs a paid option.\n\n"
+            f"Make the open-source path practical and cost-saving: prefer mature free "
+            f"frameworks, free tiers, self-hostable tools, and reusable templates. "
+            f"For INR, express all monthly costs in rupees.\n\n"
             f"Return JSON:\n"
             f'{{\n'
             f'  "comparisons": [\n'
@@ -50,12 +55,13 @@ class TechStackService:
             f'}}'
         )
 
-        return await gemini_service.structured_call(
+        result = await gemini_service.structured_call(
             system_instruction=SYSTEM_PROMPT,
             user_prompt=user_prompt,
             response_model=TechStackResponse,
             cache_type="tech_stack",
         )
+        return normalize_tech_stack_for_value(result, project_idea, currency)
 
 
 tech_stack_service = TechStackService()

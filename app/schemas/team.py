@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, model_validator
 
 class TeamRequest(BaseModel):
     project_idea: str = Field(..., min_length=15, max_length=2000)
-    currency: str = Field(default="USD", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
+    currency: str = Field(default="INR", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
 
 
 class TeamMember(BaseModel):
@@ -29,7 +29,7 @@ class TeamResponse(BaseModel):
     team: list[TeamMember] = Field(..., min_length=1)
     total_monthly_cost: float = Field(default=0, ge=0)
     total_project_cost: float = Field(default=0, ge=0)
-    currency: str = Field(default="USD", min_length=3, max_length=3)
+    currency: str = Field(default="INR", min_length=3, max_length=3)
     hiring_strategy: str = Field(
         default="Start with a lean cross-functional MVP team, then scale selectively.",
         description="Recommended approach to hiring (in-house vs outsource)."

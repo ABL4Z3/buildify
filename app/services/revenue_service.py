@@ -2,6 +2,7 @@ import logging
 
 from app.schemas.revenue import RevenueResponse
 from app.services.gemini_service import gemini_service
+from app.services.pricing_policy import preferred_currency
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +17,15 @@ SYSTEM_PROMPT = (
 
 class RevenueService:
     async def estimate_revenue(self, project_idea: str, currency: str) -> RevenueResponse:
+        currency = preferred_currency(currency)
         user_prompt = (
             f"Analyze the revenue potential for this app idea:\n\n"
             f'"{project_idea}"\n\n'
             f"Currency: {currency}\n\n"
             f"Recommend the best monetization model, estimate MRR at month 6 and 12, "
             f"calculate break-even, and suggest a pricing strategy.\n\n"
+            f"For INR, use India-market pricing assumptions and realistic consumer or SMB "
+            f"willingness to pay. Avoid US SaaS pricing unless the idea targets global users.\n\n"
             f"The estimate.model field must be exactly one of: Freemium, Subscription, Ads, Marketplace, One-time Purchase, Hybrid.\n\n"
             f"Return JSON:\n"
             f'{{\n'
@@ -41,12 +45,14 @@ class RevenueService:
             f'}}'
         )
 
-        return await gemini_service.structured_call(
+        result = await gemini_service.structured_call(
             system_instruction=SYSTEM_PROMPT,
             user_prompt=user_prompt,
             response_model=RevenueResponse,
             cache_type="revenue",
         )
+        result.estimate.currency = currency
+        return result
 
 
 revenue_service = RevenueService()

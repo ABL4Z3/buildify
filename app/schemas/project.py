@@ -9,7 +9,7 @@ class ProjectCreate(BaseModel):
     project_name: str = Field(
         default="", max_length=200, description="Optional name for the project."
     )
-    currency: str = Field(default="USD", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
+    currency: str = Field(default="INR", min_length=3, max_length=3, pattern=r"^[A-Z]{3}$")
 
 
 class ProjectOut(BaseModel):
