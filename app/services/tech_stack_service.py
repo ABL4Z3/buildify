@@ -10,7 +10,7 @@ SYSTEM_PROMPT = (
     "You are a technology advisor and DevOps consultant. "
     "You compare open-source vs paid technology options across categories "
     "(Frontend, Backend, Database, Hosting, Payments) and recommend the best combo. "
-    "Always return valid JSON matching the requested schema. "
+    "Always return valid JSON data matching the requested schema, not a JSON Schema definition. "
     "Do not include markdown or text outside the JSON."
 )
 
@@ -52,7 +52,8 @@ class TechStackService:
             f'  "recommended_combo": "React + Node.js + PostgreSQL + AWS",\n'
             f'  "estimated_savings_vs_paid": 500,\n'
             f'  "currency": "{currency}"\n'
-            f'}}'
+            f'}}\n\n'
+            f"Do not return keys like type, properties, required, or items unless they are part of an actual app comparison."
         )
 
         result = await gemini_service.structured_call(
